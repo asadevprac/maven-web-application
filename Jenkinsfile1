@@ -1,0 +1,27 @@
+node
+{
+def mavenHome = tool name: "maven3.8.4"
+ stage('gitcheckoutcode') 
+{
+git credentialsId: 'c6f30c53-0678-420d-b884-88c52dc09ac3', url: 'https://github.com/asadevprac/maven-web-application.git'
+}
+stage('mavenbuild')
+{
+sh "${mavenHome}/bin/mvn clean package"
+}
+stage('sonarcubereportgen')
+{
+sh "${mavenHome}/bin/mvn clean sonar:sonar"
+}
+stage('uploading artifact to nexus')
+{
+sh "${mavenHome}/bin/mvn clean deploy"
+}
+stage('Deploying to tomcat')
+{
+sshagent(['6bcd6aec-0e13-4bee-b39b-3db4b893bb1d']) {
+    sh "scp -o StrictHostKeyChecking=no target/maven-web-application.war ec2-user@65.2.78.69:/opt/apache-tomcat-9.0.56/webapps/"
+}
+}
+stage('sending mail')
+}
