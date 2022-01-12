@@ -1,0 +1,70 @@
+pipeline {
+    agent any
+    tools{
+        maven 'maven3.8.4'
+    }//tools closing
+triggers {
+  pollSCM '* * * * *'
+}
+// adding time stamp
+options {
+  timestamps()
+  //discard old builds
+  buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '5', daysToKeepStr: '', numToKeepStr: '5')
+}
+
+
+
+    stages {
+        stage('git checkoutcode') {
+            steps {
+                git credentialsId: 'c6f30c53-0678-420d-b884-88c52dc09ac3', url: 'https://github.com/asadevprac/maven-web-application.git'
+            }//steps for git closing
+        }//stage git checkout closing
+        //next step build
+        stage('maven build'){
+        steps{
+            sh "mvn clean package"
+        }//maven steps closing
+        }// build stage closing
+        // sonar qube report generation stage
+        stage('sonarqube report production'){
+        steps{
+            sh "mvn clean sonar:sonar"
+        }//stpes closing for sonar
+        }//stage closing for sonar
+        //artifact uploading to nexus  stage
+        stage('upload artifact to nexus server') {
+  steps {
+    sh "mvn clean deploy"
+  }//steps closing for nexus
+}//stage closing for artifact uploading
+// deploying application to tomcat
+stage('deploying application to tomcat') {
+  steps {
+    sshagent(['6bcd6aec-0e13-4bee-b39b-3db4b893bb1d']) {
+    sh "scp -o StrictHostKeyChecking=no target/maven-web-application.war ec2-user@3.109.203.154:/opt/apache-tomcat-9.0.56/webapps/"
+    }//sshagent closing
+  }//steps closing for application server
+}//stage for deploying application closing
+        
+    }//stages closing
+    post {
+  always {
+      emailext body: '''build process
+regards 
+asasri''', subject: 'Bulid process', to: 'asadevprac@gmail.com'
+    
+  }
+  success {
+   emailext body: '''build process
+regards 
+asasri''', subject: 'Bulid process', to: 'asadevprac@gmail.com'
+  }
+  failure {
+    emailext body: '''build process
+regards 
+asasri''', subject: 'Bulid process', to: 'asadevprac@gmail.com'
+  }
+}
+}//pipeline closing
