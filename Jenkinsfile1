@@ -23,5 +23,9 @@ sshagent(['6bcd6aec-0e13-4bee-b39b-3db4b893bb1d']) {
     sh "scp -o StrictHostKeyChecking=no target/maven-web-application.war ec2-user@65.2.78.69:/opt/apache-tomcat-9.0.56/webapps/"
 }
 }
-stage('sending mail')
+stage('sending mail'){
+emailext body: '''build process
+regards 
+asasri''', subject: 'Bulid process', to: 'asadevprac@gmail.com'
+}
 }
